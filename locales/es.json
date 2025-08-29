@@ -15,7 +15,7 @@
     "view_vehicle_prompt": "Pulsa [E] para gestionar el vehículo",
     "vehicle_options_title": "Opciones del vehículo",
     "vehicle_options_buy": "Comprar vehículo por %s€",
-    "vehicle_options_return": "Devolver vehículo al ~g~garaje central~s~",
+    "vehicle_options_return": "Devolver vehículo al garaje central",
     "vehicle_options_change_vehicle": "Cambiar vehículo",
     "choose_vehicle_item_title": "Vehículo: %s",
     "choose_vehicle_item_description": "Precio: %s€",
