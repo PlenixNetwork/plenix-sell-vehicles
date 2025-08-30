@@ -372,7 +372,8 @@ end
 function GiveVehicleKeys(plate, vehicle)
     local system = getActiveKeySystem()
     if system == "qs-vehiclekeys" then
-        exports['qs-vehiclekeys']:GiveKeys(plate, vehicle)
+        local model = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))
+        exports['qs-vehiclekeys']:GiveKeys(plate, model, true)
     elseif system == "qb-vehiclekeys" then
         TriggerEvent("vehiclekeys:client:SetOwner", plate)
     elseif system == "wasabi_carlock" then
@@ -383,7 +384,8 @@ end
 function RemoveVehicleKeys(plate, vehicle)
     local system = getActiveKeySystem()
     if system == "qs-vehiclekeys" then
-        exports['qs-vehiclekeys']:RemoveKeys(plate, vehicle)
+        local model = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))
+        exports['qs-vehiclekeys']:RemoveKeys(plate, model)
     elseif system == "qb-vehiclekeys" then
         TriggerEvent("qb-vehiclekeys:client:RemoveKeys", plate)
     elseif system == "wasabi_carlock" then
