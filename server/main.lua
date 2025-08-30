@@ -128,7 +128,7 @@ AddEventHandler('plenix-sell-vehicles:buyVehicle', function (index)
                 ['@owner'] = xPlayer.getIdentifier(),
                 ['@plate'] = vehicleProps.plate,
                 ['@vehicle'] = json.encode(vehicleProps),
-                ['@location'] = "San Andreas Avenue Elgin Avenue - Pillbox Hill",
+                ['@location'] = "Legion Square",
                 ['@mileage'] = mileage
             })
 
@@ -174,14 +174,14 @@ AddEventHandler('plenix-sell-vehicles:returnVehicle', function (index)
 
         MySQL.insert.await([[
             INSERT INTO owned_vehicles 
-            (owner, plate, vehicle, type, stored, in_garage, stored_in_garage, mileage) 
+            (owner, plate, vehicle, type, stored, in_garage, garage_id, mileage) 
             VALUES 
-            (@owner, @plate, @vehicle, 1, 1, @location, "car")
+            (@owner, @plate, @vehicle, "car", 1, 1, @location, @mileage)
         ]], {
             ['@owner'] = seller,
             ['@plate'] = vehicleProps.plate,
             ['@vehicle'] = json.encode(vehicleProps),
-            ['@location'] = "San Andreas Avenue Elgin Avenue - Pillbox Hill",
+            ['@location'] = "Legion Square",
             ['@mileage'] = mileage
         })
 
