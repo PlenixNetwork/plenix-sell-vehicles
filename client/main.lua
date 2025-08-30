@@ -13,6 +13,7 @@ local loadingCar = false
 local sellingCarTextPosition = vector3(0,0,0)
 
 Citizen.CreateThread(function()
+    -- 📍 Create Sell Point Blip
     SellPointBlip = AddBlipForCoord(Config.SellPoint.blipPos.x, Config.SellPoint.blipPos.y, Config.SellPoint.blipPos.z)
     SetBlipSprite(SellPointBlip, Config.SellPoint.blipSprite)
     SetBlipDisplay(SellPointBlip, 4)
@@ -23,6 +24,7 @@ Citizen.CreateThread(function()
     AddTextComponentString(locale('blip_name'))
     EndTextCommandSetBlipName(SellPointBlip)
 
+    -- 🎯 Marker Point
     point = lib.points.new({
         coords = Config.SellPoint.markerPos,
         distance = Config.SellPoint.markerShowRadius,
@@ -43,32 +45,25 @@ Citizen.CreateThread(function()
             if not lib.isTextUIOpen() then
                 local ped = PlayerPedId()
                 local vehicle = GetVehiclePedIsIn(ped, false)
-                if vehicle ~= 0 then
-                    if GetPedInVehicleSeat(vehicle, -1) == ped then
-                        lib.showTextUI(locale('sell_vehicle_prompt'), {
-                            position = "top-center"
-                        })
-                    end
+                if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
+                    lib.showTextUI(locale('sell_vehicle_prompt'), {
+                        position = "top-center"
+                    })
                 end
             end
 
             if IsControlJustPressed(0, 51) then
                 local ped = PlayerPedId()
                 local vehicle = GetVehiclePedIsIn(ped, false)
+                if vehicle == 0 or GetPedInVehicleSeat(vehicle, -1) ~= ped then
+                    ESX.ShowNotification(locale('sell_vehicle_prompt_notinvehicle'), "error")
+                    return
+                end
+
                 local vehicleProperties = lib.getVehicleProperties(vehicle)
-
-                if vehicle == 0 then
-                    ESX.ShowNotification(locale('sell_vehicle_prompt_notinvehicle'), "error")
-                    return
-                end
-
-                if GetPedInVehicleSeat(vehicle, -1) ~= ped then
-                    ESX.ShowNotification(locale('sell_vehicle_prompt_notinvehicle'), "error")
-                    return
-                end
-
                 lib.hideTextUI()
-                local ownsVehicle = lib.callback.await('fami-sell-vehicles:checkCar', false, vehicle, vehicleProperties.plate)
+
+                local ownsVehicle = lib.callback.await('plenix-sell-vehicles:checkCar', false, vehicle, vehicleProperties.plate)
                 if not ownsVehicle then
                     ESX.ShowNotification(locale('sell_vehicle_not_owned'), "error")
                     return
@@ -85,11 +80,10 @@ Citizen.CreateThread(function()
                     return
                 end
 
-                local success = lib.callback.await('fami-sell-vehicles:putOnSale', false, price, vehicleProperties)
+                local success = lib.callback.await('plenix-sell-vehicles:putOnSale', false, price, vehicleProperties)
                 if success then
                     local plate = GetVehicleNumberPlateText(vehicle)
-                    RemoveVehicleKeys(plate, vehicle)
-                    
+                    RemoveVehicleKeys(plate, vehicle) -- 🔑 Remove keys when selling
                     ESX.ShowNotification(locale('sell_vehicle_success', price))
                     ESX.Game.DeleteVehicle(vehicle)
                 else
@@ -97,9 +91,7 @@ Citizen.CreateThread(function()
                 end
             end
         else
-            if lib.isTextUIOpen() then
-                lib.hideTextUI()
-            end
+            if lib.isTextUIOpen() then lib.hideTextUI() end
         end
     end
 end)
@@ -144,17 +136,17 @@ Citizen.CreateThread(function ()
                 end
 
                 lib.registerContext({
-                    id = "fami-sell-vehicles:vehicleOptions",
+                    id = "plenix-sell-vehicles:vehicleOptions",
                     title = locale('vehicle_options_title'),
                     canClose = true,
                     options = {
-                        {title = locale('vehicle_options_buy', showingVehiclePrice), icon = "dollar", serverEvent = "fami-sell-vehicles:buyVehicle", args = showingVehicleId},
-                        {title = locale('vehicle_options_return'), icon = "car", serverEvent = "fami-sell-vehicles:returnVehicle", args = showingVehicleId, disabled = showingVehicleOwner ~= ESX.PlayerData.identifier},
+                        {title = locale('vehicle_options_buy', showingVehiclePrice), icon = "dollar", serverEvent = "plenix-sell-vehicles:buyVehicle", args = showingVehicleId},
+                        {title = locale('vehicle_options_return'), icon = "car", serverEvent = "plenix-sell-vehicles:returnVehicle", args = showingVehicleId, disabled = showingVehicleOwner ~= ESX.PlayerData.identifier},
                         {title = locale('vehicle_options_change_vehicle'), icon = "car-side", onSelect = openAllVehiclesMenu},
                     }
                 })
 
-                lib.showContext("fami-sell-vehicles:vehicleOptions")
+                lib.showContext("plenix-sell-vehicles:vehicleOptions")
             end
         else
             if self.currentDistance <= 10 then
@@ -185,7 +177,7 @@ Citizen.CreateThread(function ()
 end)
 
 function SpawnVehicle(id)
-    local vehicle = lib.callback.await('fami-sell-vehicles:getVehicleForSale', false, id)
+    local vehicle = lib.callback.await('plenix-sell-vehicles:getVehicleForSale', false, id)
 
     if not vehicle or not vehicle[1] then
         showingVehicle = -1
@@ -197,8 +189,23 @@ function SpawnVehicle(id)
     local vehicleProps = json.decode(vehicle[1].vehicleProps or "{}")
     showingVehiclePrice = formatMoney(vehicle[1].price or 0)
     showingVehicleOwner = vehicle[1].seller or "unknown"
-    
-    ESX.Game.SpawnLocalVehicle(vehicleProps.model, Config.ViewVehicles.position, Config.ViewVehicles.position.w, function (veh)
+
+    -- Make sure we use vector3 + heading
+    local spawnPos = vector3(Config.ViewVehicles.position.x, Config.ViewVehicles.position.y, Config.ViewVehicles.position.z)
+    local spawnHeading = Config.ViewVehicles.position.w
+
+    local playerPed = PlayerPedId()
+    local playerCoords = GetEntityCoords(playerPed)
+    local distance = #(playerCoords - spawnPos)
+
+    -- Prevent spawning if too far
+    if distance > 50.0 then -- you can adjust 50.0 as max allowed spawn distance
+        ESX.ShowNotification("Vehicle is too far away to spawn.", "error")
+        loadingCar = false
+        return
+    end
+
+    ESX.Game.SpawnLocalVehicle(vehicleProps.model, spawnPos, spawnHeading, function(veh)
         lib.setVehicleProperties(veh, vehicleProps)
         SetVehicleLights(veh, 2)
         SetVehicleLightsMode(veh, 2)
@@ -208,7 +215,7 @@ function SpawnVehicle(id)
 
         showingVehicle = veh
         showingVehicleId = id
-        
+
         local min, max = GetModelDimensions(GetEntityModel(veh))
         local height = max.z - min.z
         local location = GetEntityCoords(veh)
@@ -245,8 +252,8 @@ Citizen.CreateThread(function ()
     end
 end)
 
-RegisterNetEvent('fami-sell-vehicles:viewVehicle')
-AddEventHandler('fami-sell-vehicles:viewVehicle', function(data)
+RegisterNetEvent('plenix-sell-vehicles:viewVehicle')
+AddEventHandler('plenix-sell-vehicles:viewVehicle', function(data)
     if showingVehicle ~= 0 then
         if DoesEntityExist(showingVehicle) then
             DeleteEntity(showingVehicle)
@@ -265,8 +272,8 @@ AddEventHandler('fami-sell-vehicles:viewVehicle', function(data)
     SpawnVehicle(showingVehicleId)
 end)
 
-RegisterNetEvent('fami-sell-vehicles:removedVehicle')
-AddEventHandler('fami-sell-vehicles:removedVehicle', function(data)
+RegisterNetEvent('plenix-sell-vehicles:removedVehicle')
+AddEventHandler('plenix-sell-vehicles:removedVehicle', function(data)
     if showingVehicleId == data then
         if showingVehicle ~= 0 then
             if DoesEntityExist(showingVehicle) then
@@ -278,14 +285,14 @@ AddEventHandler('fami-sell-vehicles:removedVehicle', function(data)
         end
     end
 
-    if lib.getOpenContextMenu() == "fami-sell-vehicles:vehicleOptions" or lib.getOpenContextMenu() == "fami-sell-vehicles:allVehicles" then
+    if lib.getOpenContextMenu() == "plenix-sell-vehicles:vehicleOptions" or lib.getOpenContextMenu() == "plenix-sell-vehicles:allVehicles" then
         lib.hideContext(false)
     end
 end)
 
 function openAllVehiclesMenu()
     local elements = {}
-    local vehicles = lib.callback.await('fami-sell-vehicles:getVehiclesForSale', false)
+    local vehicles = lib.callback.await('plenix-sell-vehicles:getVehiclesForSale', false)
     if #vehicles == 0 then
         ESX.ShowNotification(locale('no_vehicle_for_sale'), "error")
         return
@@ -297,16 +304,16 @@ function openAllVehiclesMenu()
             title = locale('choose_vehicle_item_title', GetVehicleLabel(model)),
             description = locale('choose_vehicle_item_description', formatMoney(vehicles[i].price)),
             icon = "car",
-            event = "fami-sell-vehicles:viewVehicle",
+            event = "plenix-sell-vehicles:viewVehicle",
             args = vehicles[i].id,
             disabled = vehicles[i].id == showingVehicleId
         })
     end
 
     lib.registerContext({
-        id = "fami-sell-vehicles:allVehicles",
+        id = "plenix-sell-vehicles:allVehicles",
         title = locale('choose_vehicle_title'),
-        menu = "fami-sell-vehicles:vehicleOptions",
+        menu = "plenix-sell-vehicles:vehicleOptions",
         canClose = true,
         options = elements
     })
@@ -315,7 +322,7 @@ function openAllVehiclesMenu()
         lib.hideContext(false)
     end
 
-    lib.showContext("fami-sell-vehicles:allVehicles")
+    lib.showContext("plenix-sell-vehicles:allVehicles")
 end
 
 function GetVehicleLabel(model)
