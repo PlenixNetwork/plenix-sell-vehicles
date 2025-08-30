@@ -1,6 +1,6 @@
 lib.locale()
 
-lib.callback.register('fami-sell-vehicles:checkCar', function (source, vehicle, vehiclePlate)
+lib.callback.register('plenix-sell-vehicles:checkCar', function (source, vehicle, vehiclePlate)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     local response = MySQL.query.await('SELECT owner FROM owned_vehicles WHERE owner = @owner AND plate = @plate LIMIT 1', {
@@ -19,7 +19,7 @@ lib.callback.register('fami-sell-vehicles:checkCar', function (source, vehicle, 
     end
 end)
 
-lib.callback.register('fami-sell-vehicles:putOnSale', function(source, money, vehicleProps)
+lib.callback.register('plenix-sell-vehicles:putOnSale', function(source, money, vehicleProps)
     local xPlayer = ESX.GetPlayerFromId(source)
     local plate = vehicleProps.plate
 
@@ -50,7 +50,7 @@ lib.callback.register('fami-sell-vehicles:putOnSale', function(source, money, ve
     return true
 end)
 
-lib.callback.register('fami-sell-vehicles:getNumberOfCars', function (source)
+lib.callback.register('plenix-sell-vehicles:getNumberOfCars', function (source)
     local xPlayer = ESX.GetPlayerFromId(source)
     local plate = GetVehicleNumberPlateText(GetVehiclePedIsIn(GetPlayerPed(source), false))
 
@@ -59,7 +59,7 @@ lib.callback.register('fami-sell-vehicles:getNumberOfCars', function (source)
     return result
 end)
 
-lib.callback.register('fami-sell-vehicles:getVehicleForSale', function (source, index)
+lib.callback.register('plenix-sell-vehicles:getVehicleForSale', function (source, index)
     if index ~= '0' then
         index = tonumber(index)
     else
@@ -77,7 +77,7 @@ lib.callback.register('fami-sell-vehicles:getVehicleForSale', function (source, 
     return result
 end)
 
-lib.callback.register('fami-sell-vehicles:getVehiclesForSale', function (source)
+lib.callback.register('plenix-sell-vehicles:getVehiclesForSale', function (source)
     local result = MySQL.query.await('SELECT * FROM vehicles_for_sale')
 
     local id = 0
@@ -89,8 +89,8 @@ lib.callback.register('fami-sell-vehicles:getVehiclesForSale', function (source)
     return result
 end)
 
-RegisterNetEvent('fami-sell-vehicles:buyVehicle')
-AddEventHandler('fami-sell-vehicles:buyVehicle', function (index)
+RegisterNetEvent('plenix-sell-vehicles:buyVehicle')
+AddEventHandler('plenix-sell-vehicles:buyVehicle', function (index)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     if index ~= '0' then
@@ -134,7 +134,7 @@ AddEventHandler('fami-sell-vehicles:buyVehicle', function (index)
                 ['@id'] = result[1].id
             })
 
-            TriggerClientEvent('fami-sell-vehicles:removedVehicle', -1, index)
+            TriggerClientEvent('plenix-sell-vehicles:removedVehicle', -1, index)
 
             xPlayer.showNotification(locale('vehicle_bought', price))
         else
@@ -143,8 +143,8 @@ AddEventHandler('fami-sell-vehicles:buyVehicle', function (index)
     end
 end)
 
-RegisterNetEvent('fami-sell-vehicles:returnVehicle')
-AddEventHandler('fami-sell-vehicles:returnVehicle', function (index)
+RegisterNetEvent('plenix-sell-vehicles:returnVehicle')
+AddEventHandler('plenix-sell-vehicles:returnVehicle', function (index)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     if index ~= '0' then
@@ -187,7 +187,7 @@ AddEventHandler('fami-sell-vehicles:returnVehicle', function (index)
             ['@id'] = result[1].id
         })
 
-        TriggerClientEvent('fami-sell-vehicles:removedVehicle', -1, index)
+        TriggerClientEvent('plenix-sell-vehicles:removedVehicle', -1, index)
 
         xPlayer.showNotification(locale('vehicle_returned'))
     end
