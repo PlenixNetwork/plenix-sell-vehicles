@@ -23,7 +23,7 @@ lib.callback.register('fami-sell-vehicles:putOnSale', function(source, money, ve
     local xPlayer = ESX.GetPlayerFromId(source)
     local plate = vehicleProps.plate
 
-    local response = MySQL.query.await('SELECT owner FROM owned_vehicles WHERE owner = @owner AND plate = @plate LIMIT 1', {
+    local response = MySQL.query.await('SELECT owner, mileage FROM owned_vehicles WHERE owner = @owner AND plate = @plate LIMIT 1', {
         ['@owner'] = xPlayer.getIdentifier(),
         ['@plate'] = plate
     })
@@ -36,10 +36,11 @@ lib.callback.register('fami-sell-vehicles:putOnSale', function(source, money, ve
         return false
     end
 
-    MySQL.insert.await('INSERT INTO vehicles_for_sale (seller, vehicleProps, price) VALUES (@seller, @vehicleProps, @price)', {
+    MySQL.insert.await('INSERT INTO vehicles_for_sale (seller, vehicleProps, mileage, price) VALUES (@seller, @vehicleProps, @mileage, @price)', {
         ['@seller'] = xPlayer.getIdentifier(),
-        ['@price'] = money,
-        ['@vehicleProps'] = json.encode(vehicleProps)
+        ['@vehicleProps'] = json.encode(vehicleProps),
+        ['@mileage'] = mileage,
+        ['@price'] = money
     })
 
     MySQL.update.await('DELETE FROM owned_vehicles WHERE plate = @plate', {
@@ -102,13 +103,14 @@ AddEventHandler('fami-sell-vehicles:buyVehicle', function (index)
         error("Invalid index")
     end
 
-    local result = MySQL.query.await('SELECT id, vehicleProps, seller, price FROM vehicles_for_sale LIMIT 1 OFFSET @index', {
+    local result = MySQL.query.await('SELECT id, seller, vehicleProps, mileage, price FROM vehicles_for_sale LIMIT 1 OFFSET @index', {
         ['@index'] = index
     })
 
     if result[1] then
-        local vehicleProps = json.decode(result[1].vehicleProps)
         local seller = result[1].seller
+        local vehicleProps = json.decode(result[1].vehicleProps)
+        local mileage = result[1].mileage
         local price = result[1].price
 
         if xPlayer.getMoney() >= price then
@@ -125,7 +127,7 @@ AddEventHandler('fami-sell-vehicles:buyVehicle', function (index)
                 ['@plate'] = vehicleProps.plate,
                 ['@vehicle'] = json.encode(vehicleProps),
                 ['@location'] = "San Andreas Avenue Elgin Avenue - Pillbox Hill",
-                ['@mileage'] = 0
+                ['@mileage'] = mileage
             })
 
             MySQL.update.await('DELETE FROM vehicles_for_sale WHERE id = @id', {
@@ -155,13 +157,14 @@ AddEventHandler('fami-sell-vehicles:returnVehicle', function (index)
         error("Invalid index")
     end
 
-    local result = MySQL.query.await('SELECT id, vehicleProps, seller, price FROM vehicles_for_sale LIMIT 1 OFFSET @index', {
+    local result = MySQL.query.await('SELECT id, seller, vehicleProps, mileage, price FROM vehicles_for_sale LIMIT 1 OFFSET @index', {
         ['@index'] = index
     })
 
     if result[1] then
-        local vehicleProps = json.decode(result[1].vehicleProps)
         local seller = result[1].seller
+        local vehicleProps = json.decode(result[1].vehicleProps)
+        local mileage = result[1].mileage
         if seller ~= xPlayer.getIdentifier() then
             xPlayer.showNotification(locale('not_your_vehicle'))
             return
@@ -177,7 +180,7 @@ AddEventHandler('fami-sell-vehicles:returnVehicle', function (index)
             ['@plate'] = vehicleProps.plate,
             ['@vehicle'] = json.encode(vehicleProps),
             ['@location'] = "San Andreas Avenue Elgin Avenue - Pillbox Hill",
-            ['@mileage'] = 0
+            ['@mileage'] = mileage
         })
 
         MySQL.update.await('DELETE FROM vehicles_for_sale WHERE id = @id', {
