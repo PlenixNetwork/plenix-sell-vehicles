@@ -87,6 +87,9 @@ Citizen.CreateThread(function()
 
                 local success = lib.callback.await('fami-sell-vehicles:putOnSale', false, price, vehicleProperties)
                 if success then
+                    local plate = GetVehicleNumberPlateText(vehicle)
+                    RemoveVehicleKeys(plate, vehicle)
+                    
                     ESX.ShowNotification(locale('sell_vehicle_success', price))
                     ESX.Game.DeleteVehicle(vehicle)
                 else
@@ -357,3 +360,41 @@ AddEventHandler('onResourceStop', function(resource)
     end
 end)
 
+-- 🔑 Vehicle Keys Handler
+local function getActiveKeySystem()
+    if Config.VehicleKeys == "auto" then
+        if GetResourceState('qs-vehiclekeys') == 'started' then
+            return "qs-vehiclekeys"
+        elseif GetResourceState('qb-vehiclekeys') == 'started' then
+            return "qb-vehiclekeys"
+        elseif GetResourceState('wasabi_carlock') == 'started' then
+            return "wasabi_carlock"
+        else
+            return "none"
+        end
+    else
+        return Config.VehicleKeys
+    end
+end
+
+function GiveVehicleKeys(plate, vehicle)
+    local system = getActiveKeySystem()
+    if system == "qs-vehiclekeys" then
+        exports['qs-vehiclekeys']:GiveKeys(plate, vehicle)
+    elseif system == "qb-vehiclekeys" then
+        TriggerEvent("vehiclekeys:client:SetOwner", plate)
+    elseif system == "wasabi_carlock" then
+        exports['wasabi_carlock']:GiveKey(plate)
+    end
+end
+
+function RemoveVehicleKeys(plate, vehicle)
+    local system = getActiveKeySystem()
+    if system == "qs-vehiclekeys" then
+        exports['qs-vehiclekeys']:RemoveKeys(plate, vehicle)
+    elseif system == "qb-vehiclekeys" then
+        TriggerEvent("qb-vehiclekeys:client:RemoveKeys", plate)
+    elseif system == "wasabi_carlock" then
+        exports['wasabi_carlock']:RemoveKey(plate)
+    end
+end

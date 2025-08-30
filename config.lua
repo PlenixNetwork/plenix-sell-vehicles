@@ -1,5 +1,9 @@
 Config = {}
 
+-- Vehicle key system integration
+-- Options: "qs-vehiclekeys", "qb-vehiclekeys", "wasabi_carlock", "none", "auto"
+Config.VehicleKeys = "auto"
+
 Config.SellPoint = {
     blipSprite = 147,
     blipColor = 52,
