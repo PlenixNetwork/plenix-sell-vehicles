@@ -39,7 +39,7 @@ lib.callback.register('plenix-sell-vehicles:putOnSale', function(source, money, 
     MySQL.insert.await('INSERT INTO vehicles_for_sale (seller, vehicleProps, mileage, price) VALUES (@seller, @vehicleProps, @mileage, @price)', {
         ['@seller'] = xPlayer.getIdentifier(),
         ['@vehicleProps'] = json.encode(vehicleProps),
-        ['@mileage'] = mileage,
+        ['@mileage'] = response[1].mileage or 0,
         ['@price'] = money
     })
 
