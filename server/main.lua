@@ -121,7 +121,7 @@ AddEventHandler('plenix-sell-vehicles:buyVehicle', function (index)
 
             MySQL.insert.await([[
                 INSERT INTO owned_vehicles 
-                (owner, plate, vehicle, type, stored, in_garage, stored_in_garage, mileage) 
+                (owner, plate, vehicle, type, stored, in_garage, garage_id, mileage)
                 VALUES 
                 (@owner, @plate, @vehicle, "car", 1, 1, @location, @mileage)
             ]], {
