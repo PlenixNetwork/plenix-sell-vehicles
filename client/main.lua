@@ -190,22 +190,7 @@ function SpawnVehicle(id)
     showingVehiclePrice = formatMoney(vehicle[1].price or 0)
     showingVehicleOwner = vehicle[1].seller or "unknown"
 
-    -- Make sure we use vector3 + heading
-    local spawnPos = vector3(Config.ViewVehicles.position.x, Config.ViewVehicles.position.y, Config.ViewVehicles.position.z)
-    local spawnHeading = Config.ViewVehicles.position.w
-
-    local playerPed = PlayerPedId()
-    local playerCoords = GetEntityCoords(playerPed)
-    local distance = #(playerCoords - spawnPos)
-
-    -- Prevent spawning if too far
-    if distance > 50.0 then -- you can adjust 50.0 as max allowed spawn distance
-        ESX.ShowNotification("Vehicle is too far away to spawn.", "error")
-        loadingCar = false
-        return
-    end
-
-    ESX.Game.SpawnLocalVehicle(vehicleProps.model, spawnPos, spawnHeading, function(veh)
+    ESX.Game.SpawnLocalVehicle(vehicleProps.model, Config.ViewVehicles.position, Config.ViewVehicles.position.w, function (veh)
         lib.setVehicleProperties(veh, vehicleProps)
         SetVehicleLights(veh, 2)
         SetVehicleLightsMode(veh, 2)
