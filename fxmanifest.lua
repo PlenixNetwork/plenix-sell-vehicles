@@ -1,11 +1,11 @@
 fx_version 'cerulean'
 game 'gta5'
+lua54 'yes'
 
+name 'plenix-fivem-sell-vehicles'
 author 'Plenix Network'
 description 'Players sell their vehicles to other players.'
 version '2.0.0'
-
-lua54 'yes'
 
 shared_scripts {
     '@es_extended/imports.lua',
