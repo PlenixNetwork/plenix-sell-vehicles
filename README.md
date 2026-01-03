@@ -1,6 +1,6 @@
-# 🚗 Plenix Sell Vehicles
+# 🚗 Plenix FiveM Sell Vehicles
 
-**Plenix Sell Vehicles** is a lightweight FiveM script designed to replace the old `esx-qalle-sellvehicles`.  
+**Plenix FiveM Sell Vehicles** is a lightweight FiveM script designed to replace the old `esx-qalle-sellvehicles`.  
 It’s inspired by the original but takes a fresh approach to how vehicles are displayed and sold.
 
 ---
